@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Вечерний звон — новогодняя игра</title>
+<style>
+  :root{
+    --gold:#f5c542; --gold-2:#ffdf8a; --gold-3:#b8860b;
+    --red:#e63946; --red-2:#ff6b6b; --red-3:#8f1d26;
+    --green:#2fbf71; --green-2:#7be3a8; --green-3:#14663c;
+    --ribbon:#c1121f; --ribbon-2:#e63946;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:#050608;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    color:#f7ead0;
+    overflow:hidden;
+    position:fixed; inset:0;
+    touch-action:manipulation;
+    user-select:none; -webkit-user-select:none;
+  }
+  #app{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- СНЕГ ---------- */
+  .snow{position:fixed;inset:0;pointer-events:none;z-index:5;}
+  .flake{position:absolute;top:-5vh;color:#fff;opacity:.8;animation:fall linear infinite;text-shadow:0 0 6px rgba(255,255,255,.4);}
+  @keyframes fall{
+    to{transform:translateY(110vh) translateX(6vw) rotate(360deg);}
+  }
+
+  /* ---------- ЭКРАН СТАРТА ---------- */
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;transition:opacity .6s ease, transform .6s ease;}
+  .screen.hidden{opacity:0;transform:scale(1.05);pointer-events:none;}
+
+  .start{
+    background:
+      radial-gradient(120vmax 80vmax at 50% 120%, rgba(30,60,45,.55), transparent 60%),
+      radial-gradient(90vmax 60vmax at 50% -20%, rgba(120,30,40,.35), transparent 60%),
+      radial-gradient(60vmax 40vmax at 15% 20%, rgba(70,110,80,.18), transparent 70%),
+      radial-gradient(60vmax 40vmax at 85% 30%, rgba(90,60,20,.18), transparent 70%),
+      #050608;
+  }
+  .sprig{position:absolute;pointer-events:none;opacity:.95;}
+  .sprig svg{display:block;}
+  .sprig-tl{top:-14px;left:-30px;transform:rotate(8deg);}
+  .sprig-tr{top:-14px;right:-30px;transform:scaleX(-1) rotate(8deg);}
+  .sprig-bl{bottom:-10px;left:-24px;transform:rotate(-6deg) scale(-1,-1);}
+  .sprig-br{bottom:-10px;right:-24px;transform:scale(-1,-1) rotate(-6deg);}
+
+  .title-wrap{position:relative;text-align:center;z-index:3;margin-top:4vh;}
+  .ribbon-top{
+    display:inline-block;
+    background:linear-gradient(180deg,var(--ribbon-2),var(--ribbon));
+    color:#fff7e8;
+    padding:.55em 2.2em;
+    font-size:clamp(13px,3.4vw,17px);
+    letter-spacing:.35em;
+    text-transform:uppercase;
+    border-radius:4px;
+    box-shadow:0 6px 18px rgba(193,18,31,.45), inset 0 1px 0 rgba(255,255,255,.35);
+    position:relative;
+  }
+  .ribbon-top::before,.ribbon-top::after{
+    content:'';position:absolute;top:100%;width:0;height:0;border-style:solid;
+  }
+  .ribbon-top::before{left:0;border-width:10px 0 0 14px;border-color:transparent transparent transparent var(--ribbon-3,#7a0d14);}
+  .ribbon-top::after{right:0;border-width:0 0 10px 14px;border-color:transparent transparent transparent var(--ribbon-3,#7a0d14);border-left-color:#7a0d14;}
+  .ribbon-top::before{border-left-color:#7a0d14;}
+
+  h1{
+    font-size:clamp(44px,11vw,88px);
+    font-weight:700;
+    letter-spacing:.06em;
+    margin:.35em 0 .1em;
+    background:linear-gradient(180deg,#fff6da 0%,var(--gold-2) 35%,var(--gold) 60%,var(--gold-3) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 40px rgba(245,197,66,.28);
+    filter:drop-shadow(0 4px 14px rgba(0,0,0,.7));
+  }
+  .subtitle{
+    font-size:clamp(13px,3.6vw,17px);
+    color:#cfd8d4;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    opacity:.85;
+  }
+  .bells-hero{position:relative;display:flex;justify-content:center;align-items:flex-end;gap:2px;margin-top:3vh;height:clamp(150px,34vw,230px);}
+  .bell-hang{display:flex;flex-direction:column;align-items:center;transform-origin:top center;}
+  .bell-hang .cord{width:3px;background:linear-gradient(180deg,#8a6d2f,var(--gold-3));height:clamp(26px,6vw,46px);}
+  .bell-hang svg{width:clamp(74px,20vw,120px);height:auto;filter:drop-shadow(0 10px 16px rgba(0,0,0,.55));}
+  .b1{animation:sway 3.4s ease-in-out infinite;}
+  .b2{animation:sway 3.4s ease-in-out infinite .45s;}
+  .b3{animation:sway 3.4s ease-in-out infinite .9s;}
+  @keyframes sway{0%,100%{transform:rotate(-3.5deg);}50%{transform:rotate(3.5deg);}}
+
+  .btn-play{
+    margin-top:4.5vh;
+    font-size:clamp(19px,5vw,25px);
+    font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:#3a2404;
+    background:linear-gradient(180deg,#ffe9a8,var(--gold) 45%,#c8951c);
+    border:none;border-radius:60px;
+    padding:.85em 2.6em;
+    cursor:pointer;
+    box-shadow:0 8px 0 #8a6410, 0 16px 34px rgba(245,197,66,.35), inset 0 2px 0 rgba(255,255,255,.7);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn-play:active{transform:translateY(5px);box-shadow:0 3px 0 #8a6410,0 8px 18px rgba(245,197,66,.3), inset 0 2px 0 rgba(255,255,255,.7);}
+  .hint{margin-top:2.6vh;font-size:clamp(12px,3.2vw,14px);color:#9fb0a8;text-align:center;line-height:1.7;padding:0 8vw;}
+  .hint b{color:#f5c542;}
+
+  /* ---------- ЭКРАН ИГРЫ ---------- */
+  .game{
+    background:
+      radial-gradient(100vmax 70vmax at 50% 115%, rgba(35,70,50,.5), transparent 60%),
+      radial-gradient(80vmax 50vmax at 50% -15%, rgba(140,35,45,.30), transparent 65%),
+      #050608;
+    justify-content:flex-start;
+  }
+  .garland{position:relative;height:14px;width:100%;flex:none;
+    background:
+      repeating-linear-gradient(90deg,
+        #1e5c39 0 26px, #1a4f31 26px 52px);
+    box-shadow:0 2px 10px rgba(0,0,0,.6), inset 0 -3px 6px rgba(0,0,0,.4);
+  }
+  .garland .bulb{position:absolute;top:7px;width:9px;height:9px;border-radius:50%;
+    box-shadow:0 0 8px 2px currentColor;animation:blink 1.6s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  .hud{width:min(560px,94vw);display:flex;justify-content:space-between;align-items:center;margin-top:2.2vh;padding:0 4px;flex:none;}
+  .hud-label{font-size:clamp(11px,3vw,13px);letter-spacing:.22em;text-transform:uppercase;color:#a8b8ae;}
+  .round-val{font-size:clamp(26px,7vw,34px);font-weight:800;color:var(--gold-2);text-shadow:0 0 18px rgba(245,197,66,.45);}
+  .lives{display:flex;gap:7px;}
+  .life{width:16px;height:16px;filter:drop-shadow(0 0 6px rgba(230,57,70,.6));transition:opacity .3s, transform .3s;}
+  .life.lost{opacity:.18;transform:scale(.7);filter:none;}
+
+  .status{margin-top:1.4vh;font-size:clamp(15px,4vw,19px);color:#f2e7cf;min-height:1.6em;text-align:center;letter-spacing:.04em;flex:none;}
+  .status .em{color:var(--gold-2);font-weight:700;}
+
+  /* рамка вокруг игрового поля */
+  .frame{
+    position:relative;
+    width:min(560px,94vw);
+    margin-top:1.2vh;
+    flex:0 1 auto;
+    border-radius:26px;
+    padding:clamp(12px,3vw,18px);
+    background:
+      linear-gradient(150deg,rgba(245,197,66,.28),rgba(230,57,70,.22) 45%,rgba(47,191,113,.20)) border-box;
+    border:2px solid transparent;
+    box-shadow:0 0 0 1px rgba(245,197,66,.15), 0 20px 50px rgba(0,0,0,.55), inset 0 0 40px rgba(0,0,0,.45);
+  }
+  .frame::before{
+    content:'';position:absolute;inset:4px;border-radius:20px;border:1.5px dashed rgba(245,197,66,.35);pointer-events:none;
+  }
+  .frame .corner{position:absolute;width:30px;height:30px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.6));}
+  .frame .c1{top:-13px;left:-13px;}
+  .frame .c2{top:-13px;right:-13px;transform:scaleX(-1);}
+  .frame .c3{bottom:-13px;left:-13px;transform:scaleY(-1);}
+  .frame .c4{bottom:-13px;right:-13px;transform:scale(-1,-1);}
+
+  .field{
+    position:relative;
+    border-radius:18px;
+    background:
+      radial-gradient(80% 60% at 50% 110%, rgba(20,50,35,.55), transparent 70%),
+      linear-gradient(180deg,#0b1210,#070a09);
+    display:flex;align-items:flex-end;justify-content:center;gap:clamp(8px,3.5vw,26px);
+    padding:clamp(14px,4vw,26px) clamp(8px,3vw,20px) clamp(20px,6vw,40px);
+    min-height:min(46vh,380px);
+  }
+  .field .cord-line{position:absolute;top:8px;left:8%;right:8%;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold-3),transparent);opacity:.7;}
+
+  .bell-btn{
+    background:none;border:none;padding:0;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;
+    transform-origin:top center;
+    -webkit-user-select:none;user-select:none;touch-action:manipulation;
+    outline:none;
+  }
+  .bell-btn .cord{width:3px;height:clamp(16px,4.5vw,30px);background:linear-gradient(180deg,#8a6d2f,var(--gold-3));}
+  .bell-btn svg{
+    width:clamp(64px,21vw,110px);height:auto;
+    filter:drop-shadow(0 10px 14px rgba(0,0,0,.55));
+    transition:transform .1s ease;
+  }
+  .bell-btn .name{
+    margin-top:6px;font-size:clamp(10px,2.8vw,13px);letter-spacing:.16em;text-transform:uppercase;
+    opacity:.75;
+  }
+  .bell-btn[data-color="gold"] .name{color:var(--gold-2);}
+  .bell-btn[data-color="red"] .name{color:var(--red-2);}
+  .bell-btn[data-color="green"] .name{color:var(--green-2);}
+
+  .bell-btn.lit svg{animation:ring .55s ease;}
+  .bell-btn.lit{filter:brightness(1.25);}
+  @keyframes ring{
+    0%{transform:rotate(0) scale(1);}
+    20%{transform:rotate(-9deg) scale(1.08);}
+    45%{transform:rotate(8deg) scale(1.06);}
+    70%{transform:rotate(-5deg) scale(1.03);}
+    100%{transform:rotate(0) scale(1);}
+  }
+  .bell-btn.lit::after{
+    content:'';position:absolute;inset:-6%;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.22),transparent 65%);
+    pointer-events:none;animation:glowpulse .55s ease;
+  }
+  @keyframes glowpulse{0%{opacity:1;}100%{opacity:0;}}
+  .bell-btn{position:relative;}
+
+  .bell-btn.press svg{transform:scale(.92) translateY(4px);}
+  .bell-btn:active svg{transform:scale(.94) translateY(3px);}
+
+  .lock{position:absolute;inset:0;border-radius:18px;}
+
+  /* ---------- ЭКРАНЫ РЕЗУЛЬТАТА ---------- */
+  .over{
+    background:
+      radial-gradient(90vmax 60vmax at 50% 115%, rgba(120,30,40,.4), transparent 60%),
+      radial-gradient(70vmax 45vmax at 50% -10%, rgba(245,197,66,.10), transparent 60%),
+      #050608;
+  }
+  .over .big{font-size:clamp(34px,9vw,58px);font-weight:800;letter-spacing:.05em;
+    background:linear-gradient(180deg,#fff6da,var(--gold),var(--gold-3));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,.6));}
+  .over .msg{margin-top:1.8vh;font-size:clamp(15px,4.2vw,19px);color:#e9ddc2;text-align:center;line-height:1.75;padding:0 9vw;}
+  .over .score-line{margin-top:2.4vh;font-size:clamp(15px,4vw,19px);color:#a8b8ae;}
+  .over .score-line b{color:var(--gold-2);font-size:1.35em;}
+  .over .btn-play{margin-top:4vh;}
+  .over .mini{margin-top:1.8vh;font-size:clamp(12px,3.2vw,14px);color:#8fa096;}
+
+  .screen{padding:4vh 0;}
+  @media (max-height:640px){
+    h1{margin:.25em 0 .05em;}
+    .btn-play{margin-top:3vh;}
+    .bells-hero{height:clamp(120px,26vw,190px);}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ СТАРТ ============ -->
+  <section id="screen-start" class="screen start">
+    <div class="sprig sprig-tl">
+      <svg width="200" height="120" viewBox="0 0 200 120" fill="none">
+        <g stroke="#1d4d33" stroke-width="3" stroke-linecap="round">
+          <path d="M-10 8 Q60 18 118 34"/><path d="M-10 26 Q55 40 100 60"/>
+        </g>
+        <g stroke="#2e7a4e" stroke-width="2.2" stroke-linecap="round" opacity=".95">
+          <path d="M30 12 l22 -12"/><path d="M52 16 l24 -13"/><path d="M76 20 l24 -14"/>
+          <path d="M22 22 l-4 -20"/><path d="M46 27 l-2 -21"/><path d="M72 33 l0 -21"/>
+          <path d="M98 40 l3 -20"/><path d="M30 30 l24 -16"/><path d="M60 38 l26 -15"/>
+          <path d="M88 50 l27 -12"/>
+        </g>
+        <g stroke="#3fa363" stroke-width="1.6" stroke-linecap="round" opacity=".8">
+          <path d="M36 16 l16 -10"/><path d="M64 24 l18 -11"/><path d="M92 36 l20 -9"/>
+          <path d="M28 26 l18 -12"/><path d="M56 33 l19 -11"/>
+        </g>
+        <circle cx="118" cy="34" r="5" fill="#e63946"/><circle cx="118" cy="34" r="2" fill="#ffb3ab"/>
+        <circle cx="100" cy="60" r="4" fill="#f5c542"/><circle cx="100" cy="60" r="1.6" fill="#fff2c8"/>
+      </svg>
+    </div>
+    <div class="sprig sprig-tr">
+      <svg width="200" height="120" viewBox="0 0 200 120" fill="none">
+        <g stroke="#1d4d33" stroke-width="3" stroke-linecap="round">
+          <path d="M-10 8 Q60 18 118 34"/><path d="M-10 26 Q55 40 100 60"/>
+        </g>
+        <g stroke="#2e7a4e" stroke-width="2.2" stroke-linecap="round" opacity=".95">
+          <path d="M30 12 l22 -12"/><path d="M52 16 l24 -13"/><path d="M76 20 l24 -14"/>
+          <path d="M22 22 l-4 -20"/><path d="M46 27 l-2 -21"/><path d="M72 33 l0 -21"/>
+          <path d="M98 40 l3 -20"/><path d="M30 30 l24 -16"/><path d="M60 38 l26 -15"/>
+          <path d="M88 50 l27 -12"/>
+        </g>
+        <g stroke="#3fa363" stroke-width="1.6" stroke-linecap="round" opacity=".8">
+          <path d="M36 16 l16 -10"/><path d="M64 24 l18 -11"/><path d="M92 36 l20 -9"/>
+          <path d="M28 26 l18 -12"/><path d="M56 33 l19 -11"/>
+        </g>
+        <circle cx="118" cy="34" r="5" fill="#e63946"/><circle cx="118" cy="34" r="2" fill="#ffb3ab"/>
+        <circle cx="100" cy="60" r="4" fill="#f5c542"/><circle cx="100" cy="60" r="1.6" fill="#fff2c8"/>
+      </svg>
+    </div>
+
+    <div class="title-wrap">
+      <div class="ribbon-top">Новогодняя игра</div>
+      <h1>Вечерний&nbsp;звон</h1>
+      <div class="subtitle">Повтори мелодию колокольчиков</div>
+    </div>
+
+    <div class="bells-hero">
+      <div class="bell-hang b1">
+        <div class="cord"></div>
+        <svg viewBox="0 0 100 120"><use href="#bellShape" fill="url(#gGold)"/><use href="#bellDeco" opacity=".55"/></svg>
+      </div>
+      <div class="bell-hang b2" style="margin-bottom:16px;">
+        <div class="cord"></div>
+        <svg viewBox="0 0 100 120"><use href="#bellShape" fill="url(#gRed)"/><use href="#bellDeco" opacity=".55"/></svg>
+      </div>
+      <div class="bell-hang b3">
+        <div class="cord"></div>
+        <svg viewBox="0 0 100 120"><use href="#bellShape" fill="url(#gGreen)"/><use href="#bellDeco" opacity=".55"/></svg>
+      </div>
+    </div>
+
+    <button id="btnStart" class="btn-play">Играть</button>
+    <div class="hint">
+      Слушай мелодию и повторяй её нажатиями.<br>
+      Каждый тур мелодия длиннее. <b>Три ошибки</b> — и звон стихает.
+    </div>
+  </section>
+
+  <!-- ============ ИГРА ============ -->
+  <section id="screen-game" class="screen game hidden">
+    <div class="garland" id="garland"></div>
+
+    <div class="hud">
+      <div>
+        <div class="hud-label">Тур</div>
+        <div class="round-val" id="roundVal">1</div>
+      </div>
+      <div class="hud-label" style="text-align:center;" id="statusMini">Слушай…</div>
+      <div>
+        <div class="hud-label" style="text-align:right;">Попытки</div>
+        <div class="lives" id="lives">
+          <svg class="life" viewBox="0 0 24 24"><path fill="#e63946" d="M12 2c.4 4-2.3 5.6-3.4 7.4C7.2 11.6 7 13.6 8 15.4c-1.6.3-2.5 1.4-2.5 2.8C5.5 20 7.5 22 12 22s6.5-2 6.5-3.8c0-1.4-.9-2.5-2.5-2.8 1-1.8.8-3.8-.6-6C14.3 7.6 11.6 6 12 2z"/></svg>
+          <svg class="life" viewBox="0 0 24 24"><path fill="#e63946" d="M12 2c.4 4-2.3 5.6-3.4 7.4C7.2 11.6 7 13.6 8 15.4c-1.6.3-2.5 1.4-2.5 2.8C5.5 20 7.5 22 12 22s6.5-2 6.5-3.8c0-1.4-.9-2.5-2.5-2.8 1-1.8.8-3.8-.6-6C14.3 7.6 11.6 6 12 2z"/></svg>
+          <svg class="life" viewBox="0 0 24 24"><path fill="#e63946" d="M12 2c.4 4-2.3 5.6-3.4 7.4C7.2 11.6 7 13.6 8 15.4c-1.6.3-2.5 1.4-2.5 2.8C5.5 20 7.5 22 12 22s6.5-2 6.5-3.8c0-1.4-.9-2.5-2.5-2.8 1-1.8.8-3.8-.6-6C14.3 7.6 11.6 6 12 2z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="status">Слушай мелодию…</div>
+
+    <div class="frame">
+      <svg class="corner c1" viewBox="0 0 40 40"><path d="M4 36 V12 Q4 4 12 4 H36" stroke="#f5c542" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="#e63946"/></svg>
+      <svg class="corner c2" viewBox="0 0 40 40"><path d="M4 36 V12 Q4 4 12 4 H36" stroke="#f5c542" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="#2fbf71"/></svg>
+      <svg class="corner c3" viewBox="0 0 40 40"><path d="M4 36 V12 Q4 4 12 4 H36" stroke="#f5c542" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="#2fbf71"/></svg>
+      <svg class="corner c4" viewBox="0 0 40 40"><path d="M4 36 V12 Q4 4 12 4 H36" stroke="#f5c542" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="#e63946"/></svg>
+
+      <div class="field">
+        <div class="cord-line"></div>
+        <button class="bell-btn" data-color="gold" data-note="0">
+          <div class="cord"></div>
+          <svg viewBox="0 0 100 120"><use href="#bellShape" fill="url(#gGold)"/><use href="#bellDeco" opacity=".55"/></svg>
+          <div class="name">Золото</div>
+        </button>
+        <button class="bell-btn" data-color="red" data-note="1" style="margin-bottom:clamp(6px,2vw,14px);">
+          <div class="cord"></div>
+          <svg viewBox="0 0 100 120"><use href="#bellShape" fill="url(#gRed)"/><use href="#bellDeco" opacity=".55"/></svg>
+          <div class="name">Янтарь</div>
+        </button>
+        <button class="bell-btn" data-color="green" data-note="2">
+          <div class="cord"></div>
+          <svg viewBox="0 0 100 120"><use href="#bellShape" fill="url(#gGreen)"/><use href="#bellDeco" opacity=".55"/></svg>
+          <div class="name">Ель</div>
+        </button>
+        <div class="lock" id="lock"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ КОНЕЦ ============ -->
+  <section id="screen-over" class="screen over hidden">
+    <div class="big" id="overTitle">Звон умолк</div>
+    <div class="msg" id="overMsg">Колокольчики уходят в ночь…</div>
+    <div class="score-line">Дошли до тура <b id="overRound">1</b></div>
+    <button id="btnRetry" class="btn-play">Ещё раз</button>
+    <div class="mini">Закажи роллы к празднику: ролл-экспресс.рф · 307-715</div>
+  </section>
+</div>
+
+<!-- ============ SVG-ДЕФИНИЦИИ ============ -->
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3c4"/><stop offset=".35" stop-color="#f5c542"/>
+      <stop offset=".75" stop-color="#c8951c"/><stop offset="1" stop-color="#8a6410"/>
+    </linearGradient>
+    <linearGradient id="gRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb0b0"/><stop offset=".35" stop-color="#e63946"/>
+      <stop offset=".75" stop-color="#b22234"/><stop offset="1" stop-color="#7a0d14"/>
+    </linearGradient>
+    <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b6f4cf"/><stop offset=".35" stop-color="#2fbf71"/>
+      <stop offset=".75" stop-color="#1d8a4d"/><stop offset="1" stop-color="#0f5a30"/>
+    </linearGradient>
+
+    <g id="bellShape">
+      <!-- псевдообъёмный колокольчик -->
+      <path d="M50 12
+        C 47 12 45 14 45 17
+        L 45 22
+        C 30 26 21 40 20 58
+        L 18 78
+        C 18 84 14 86 12 88
+        L 88 88
+        C 86 86 82 84 82 78
+        L 80 58
+        C 79 40 70 26 55 22
+        L 55 17
+        C 55 14 53 12 50 12 Z"/>
+      <ellipse cx="50" cy="92" rx="38" ry="7" opacity=".35" fill="#000"/>
+      <ellipse cx="50" cy="88" rx="38" ry="6" opacity=".9"/>
+      <circle cx="50" cy="98" r="4.5"/>
+      <path d="M50 102 a4.5 5.5 0 0 0 4.5 5.5" stroke="#00000033" stroke-width="2" fill="none"/>
+      <!-- блик -->
+      <path d="M38 24 C 30 32 26 44 26 58 L 27 78 C 27 82 25 84 23 86"
+        stroke="#ffffff" stroke-width="4" fill="none" opacity=".4" stroke-linecap="round"/>
+    </g>
+    <g id="bellDeco">
+      <path d="M20 62 H80" stroke="#00000022" stroke-width="2"/>
+      <circle cx="50" cy="74" r="7" fill="#ffffff55"/>
+      <path d="M43 74 a7 7 0 0 0 14 0" fill="none" stroke="#ffffff88" stroke-width="1.5"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="snow" id="snow"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- снег ---------- */
+  var snowBox=document.getElementById('snow');
+  for(var i=0;i<26;i++){
+    var f=document.createElement('div');
+    f.className='flake';
+    f.textContent=['❄','❅','✻','•'][i%4];
+    f.style.left=(Math.random()*100)+'vw';
+    f.style.fontSize=(7+Math.random()*13)+'px';
+    f.style.opacity=(.25+Math.random()*.5).toFixed(2);
+    var dur=9+Math.random()*14;
+    f.style.animationDuration=dur+'s';
+    f.style.animationDelay=(-Math.random()*dur)+'s';
+    snowBox.appendChild(f);
+  }
+
+  /* ---------- гирлянда ---------- */
+  var g=document.getElementById('garland');
+  var cols=['#f5c542','#e63946','#2fbf71','#ff8f3f','#9ad1ff'];
+  for(var j=0;j<20;j++){
+    var b=document.createElement('span');
+    b.className='bulb';
+    b.style.left=(2+j*5)+'%';
+    b.style.color=cols[j%cols.length];
+    b.style.animationDelay=(j*0.18)+'s';
+    g.appendChild(b);
+  }
+
+  /* ---------- звук ---------- */
+  var AC=null;
+  function ensureAudio(){
+    if(!AC){
+      var Ctx=window.AudioContext||window.webkitAudioContext;
+      if(Ctx) AC=new Ctx();
+    }
+    if(AC&&AC.state==='suspended') AC.resume();
+  }
+  var NOTES=[659.25,523.25,783.99]; /* E5, C5, G5 */
+  function playNote(idx,when,vol){
+    ensureAudio();
+    if(!AC) return;
+    var t=when||AC.currentTime;
+    vol=vol||0.5;
+    var f=NOTES[idx];
+    [[1,1],[2.0,.42],[2.92,.22],[4.16,.10]].forEach(function(p){
+      var o=AC.createOscillator(), gn=AC.createGain();
+      o.type='sine';
+      o.frequency.value=f*p[0];
+      gn.gain.setValueAtTime(0.0001,t);
+      gn.gain.exponentialRampToValueAtTime(vol*p[1],t+0.012);
+      gn.gain.exponentialRampToValueAtTime(0.0001,t+1.15);
+      o.connect(gn); gn.connect(AC.destination);
+      o.start(t); o.stop(t+1.25);
+    });
+  }
+  function playError(){
+    ensureAudio(); if(!AC) return;
+    var t=AC.currentTime;
+    [[196,0],[185,0.14]].forEach(function(p){
+      var o=AC.createOscillator(),gn=AC.createGain();
+      o.type='sawtooth'; o.frequency.value=p[0];
+      gn.gain.setValueAtTime(0.0001,t+p[1]);
+      gn.gain.exponentialRampToValueAtTime(0.18,t+p[1]+0.02);
+      gn.gain.exponentialRampToValueAtTime(0.0001,t+p[1]+0.5);
+      o.connect(gn);gn.connect(AC.destination);
+      o.start(t+p[1]);o.stop(t+p[1]+0.55);
+    });
+  }
+  function playWin(){
+    ensureAudio(); if(!AC) return;
+    var t=AC.currentTime;
+    [523.25,659.25,783.99,1046.5].forEach(function(f,k){
+      var o=AC.createOscillator(),gn=AC.createGain();
+      o.type='sine'; o.frequency.value=f;
+      gn.gain.setValueAtTime(0.0001,t+k*0.12);
+      gn.gain.exponentialRampToValueAtTime(0.35,t+k*0.12+0.02);
+      gn.gain.exponentialRampToValueAtTime(0.0001,t+k*0.12+0.8);
+      o.connect(gn);gn.connect(AC.destination);
+      o.start(t+k*0.12);o.stop(t+k*0.12+0.9);
+    });
+  }
+
+  /* ---------- утилиты ---------- */
+  var $=function(id){return document.getElementById(id);};
+  function show(screen){
+    ['screen-start','screen-game','screen-over'].forEach(function(id){
+      $(id).classList.toggle('hidden',id!==screen);
+    });
+  }
+  function status(html){$('status').innerHTML=html;$('statusMini').textContent=$('status').textContent;}
+
+  /* ---------- состояние ---------- */
+  var round=1, lives=3, seq=[], inputIdx=0, phase='idle';
+  /* phase: idle | show | input | over */
+  var bellBtns=[].slice.call(document.querySelectorAll('.bell-btn'));
+
+  function lightBell(idx,dur){
+    var btn=bellBtns[idx];
+    btn.classList.remove('lit');
+    void btn.offsetWidth;
+    btn.classList.add('lit');
+    playNote(idx);
+    setTimeout(function(){btn.classList.remove('lit');},dur||520);
+  }
+
+  function genSeq(len){
+    var s=[];
+    for(var i=0;i<len;i++) s.push(Math.floor(Math.random()*3));
+    return s;
+  }
+
+  function playSequence(){
+    phase='show';
+    $('lock').style.display='block';
+    status('<span class="em">Слушай мелодию…</span>');
+    var step=640, i=0;
+    function next(){
+      if(i<seq.length){
+        lightBell(seq[i],460);
+        i++;
+        setTimeout(next,step);
+      }else{
+        setTimeout(function(){
+          phase='input'; inputIdx=0;
+          $('lock').style.display='none';
+          status('<span class="em">Твой ход!</span> Повтори последовательность');
+        },420);
+      }
+    }
+    setTimeout(next,650);
+  }
+
+  function setLives(){
+    var ls=document.querySelectorAll('#lives .life');
+    for(var i=0;i<ls.length;i++) ls[i].classList.toggle('lost',i>=lives);
+  }
+
+  function startRound(){
+    $('roundVal').textContent=round;
+    seq=genSeq(round+2);
+    playSequence();
+  }
+
+  function gameOver(){
+    phase='over';
+    playError();
+    setTimeout(playError,300);
+    $('overRound').textContent=round;
+    $('overMsg').innerHTML='Колокольчики ушли в ночь вместе с мелодией.<br>Но каждая нота — опыт: попробуй ещё!';
+    show('screen-over');
+  }
+
+  function roundWin(){
+    phase='idle';
+    playWin();
+    status('<span class="em">Верно!</span> Звон становится длиннее…');
+    setTimeout(function(){
+      round++;
+      startRound();
+    },1400);
+  }
+
+  bellBtns.forEach(function(btn){
+    btn.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      if(phase!=='input') return;
+      ensureAudio();
+      var idx=parseInt(btn.dataset.note,10);
+      lightBell(idx,420);
+      if(seq[inputIdx]===idx){
+        inputIdx++;
+        if(inputIdx>=seq.length){
+          phase='wait';
+          setTimeout(roundWin,600);
+        }
+      }else{
+        lives--;
+        setLives();
+        phase='wait';
+        playError();
+        if(lives<=0){
+          setTimeout(gameOver,700);
+        }else{
+          status('Мимо! Осталось попыток: <span class="em">'+lives+'</span><br>Слушай ещё раз…');
+          setTimeout(playSequence,1300);
+        }
+      }
+    });
+  });
+
+  function startGame(){
+    ensureAudio();
+    round=1;lives=3;phase='idle';
+    setLives();
+    show('screen-game');
+    setTimeout(startRound,700);
+  }
+
+  $('btnStart').addEventListener('click',function(){
+    ensureAudio();
+    var el=document.documentElement;
+    var rq=el.requestFullscreen||el.webkitRequestFullscreen;
+    if(rq&&!document.fullscreenElement){ try{rq.call(el);}catch(e){} }
+    startGame();
+  });
+  $('btnRetry').addEventListener('click',startGame);
+
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden&&AC){AC.suspend();}
+    else if(AC){AC.resume();}
+  });
+})();
+</script>
+</body>
+</html>
